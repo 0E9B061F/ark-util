@@ -1,4 +1,4 @@
-module S25
+module Ark
 
   # Timer.time reports the time since the last call to Timer.reset
   class Timer
