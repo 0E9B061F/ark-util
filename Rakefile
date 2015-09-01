@@ -2,8 +2,12 @@ require 'rubygems/package_task'
 
 v = `git describe --tags`.strip.tr('-', '.')
 c = 2 - v.count('.')
-p = c >= 0 ? '.0' * c : ''
-Version = v+p
+if c > 0
+	v = v + ('.0' * c)
+else
+	v.sub!(/\.[^\.]+$/, '.pre')
+end
+Version = v
 
 spec = Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
