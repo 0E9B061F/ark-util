@@ -89,6 +89,10 @@ module Ark
       self.next()
     end
 
+    def indent(count)
+      self.push(' ' * (count - 1))
+    end
+
     def next(str=nil)
       @lines << []
       @line  += 1
