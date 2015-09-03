@@ -71,7 +71,7 @@ module Ark
     end
   end
 
-  class Line
+  class TextBuilder
     def initialize()
       @lines = [[]]
       @line  = 0
