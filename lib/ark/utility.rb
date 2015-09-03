@@ -2,7 +2,6 @@ module Ark
 
   # Timer.time reports the time since the last call to Timer.reset
   class Timer
-
     Conf = {}
     Conf[:round] = 2
 
@@ -20,7 +19,6 @@ module Ark
   end
 
   module Log
-
     Conf = {}
     Conf[:quiet] = false
     Conf[:verbose] = false
@@ -57,11 +55,7 @@ module Ark
     # Pulse a message for the duration of the execution of a block
     def pulse(str, time, &block)
     end
-
-    def root(*args)
-      File.join(Root, *args)
-    end
   end
 
-end # module S25
+end
 
