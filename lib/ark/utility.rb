@@ -64,5 +64,37 @@ module Ark
       text.gsub(/^/, ' ' * indent)
     end
   end
+
+  class Line
+    def initialize()
+      @lines = [[]]
+      @line  = 0
+    end
+
+    def push(str)
+      @lines[@line] << str.to_s
+    end
+
+    def wrap(text, width: 78, indent: 0)
+      text = Text.wrap(text, width: width, indent: indent)
+      self.next(text)
+      self.next()
+    end
+
+    def next(str=nil)
+      @lines << []
+      @line  += 1
+      self.push(str) if str
+    end
+
+    def skip(str=nil)
+      self.next()
+      self.next(str)
+    end
+
+    def print()
+      @lines.map {|line| line.join(' ') }.join("\n")
+    end
+  end
 end
 
