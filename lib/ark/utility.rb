@@ -57,5 +57,12 @@ module Ark
     end
   end
 
+  module Text
+    def self.wrap(text, width: 78, indent: 0)
+      width -= indent
+      text = text.gsub(/\s+/, " ").gsub(/(.{1,#{width}})( |\Z)/, "\\1\n")
+      text.gsub(/^/, ' ' * indent)
+    end
+  end
 end
 
