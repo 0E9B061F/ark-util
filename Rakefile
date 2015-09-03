@@ -46,7 +46,7 @@ task :test do
 end
 
 desc "Build a gem then install"
-task :install => :gem do
+task :install => [:clobber, :gem] do
   system "gem install pkg/#{spec.name}-#{Version}.gem"
 end
 
