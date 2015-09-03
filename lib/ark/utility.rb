@@ -72,7 +72,15 @@ module Ark
     end
 
     def push(str)
-      @lines[@line] << str.to_s
+      if str.is_a?(Array)
+        @lines[@line] += str.map(&:to_s)
+      else
+        @lines[@line] << str.to_s
+      end
+    end
+
+    def add(str)
+      @lines[@line].last += str.to_s
     end
 
     def wrap(text, width: 78, indent: 0)
