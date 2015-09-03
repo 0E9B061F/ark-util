@@ -80,17 +80,19 @@ module Ark
     end
 
     def add(str)
-      @lines[@line].last += str.to_s
+      @lines[@line][-1] += str.to_s
     end
 
-    def wrap(text, width: 78, indent: 0)
+    def wrap(width: 78, indent: 0)
+      text = @lines[@line].join(' ')
       text = Text.wrap(text, width: width, indent: indent)
-      self.next(text)
-      self.next()
+      @lines[@line] = nil
+      @line -= 1
+      text.split("\n").each {|line| self.next(line) }
     end
 
     def indent(count)
-      self.push(' ' * (count - 1))
+      @lines[@line].unshift(' ' * (count - 1))
     end
 
     def next(str=nil)
