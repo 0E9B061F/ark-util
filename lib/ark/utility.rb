@@ -17,15 +17,20 @@
 
 module Ark
 
-  # Timer.time reports the time since the last call to Timer.reset
+  # A stopwatch-like timer
   class Timer
+    # Configuration details for Ark::Timer. Settings:
+    # [+:round+] Number of places to round the returned time to
     Conf = {}
     Conf[:round] = 2
 
+    # Reset the timer start time to now
     def self.reset()
       @@start = Time.now
     end
 
+    # Return the time in seconds from the last call to #reset, or from the
+    # beginning of program execution
     def self.time()
       t = Time.now - @@start
       t.round(Conf[:round]).to_s.ljust(5,'0')
@@ -35,14 +40,19 @@ module Ark
 
   end
 
+  # Logging/messaging facilities intended for STDOUT
   module Log
+    # Configuration details for Ark::Log. Settings:
+    # [+:quiet+] Suppress all messages of any verbosity
+    # [+:verbose+] Allow high-verbosity messages to be printed
+    # [+:timed+] Include the time since Timer#reset was called in all messages
     Conf = {}
     Conf[:quiet] = false
     Conf[:verbose] = false
     Conf[:timed] = true
 
-    # Write to standard output according to a standard format and verbosity
-    # options
+    # Write +msg+ to standard output according to verbosity settings. Not meant
+    # to be used directly
     def say(msg, sym='...', loud=false, indent=0)
       return false if Conf[:quiet]
       return false if loud && !Conf[:verbose]
@@ -59,18 +69,22 @@ module Ark
         puts
       end
     end
+    # Write a low-verbosity message to STDOUT
     def msg(str, indent=0)
       say(str, '>>>', false, indent)
     end
+    # Write high-verbosity debugging information to STDOUT
     def dbg(str, indent=0)
       say(str, '...', true, indent)
     end
+    # Write a high-verbosity warning to STDOUT
     def wrn(str, indent=0)
       say(str, '???', true, indent)
     end
 
     # Pulse a message for the duration of the execution of a block
     def pulse(str, time, &block)
+      # TODO
     end
   end
 
@@ -88,12 +102,15 @@ module Ark
     end
   end
 
+  # Build text progressively, line by line
   class TextBuilder
+    # Initialize a TextBuilder instance
     def initialize()
       @lines = [[]]
       @line  = 0
     end
 
+    # Push a string onto the current line
     def push(str)
       if str.is_a?(Array)
         @lines[@line] += str.map(&:to_s)
@@ -102,10 +119,14 @@ module Ark
       end
     end
 
+    # Add +str+ to the last string on the line. This avoids a space between the
+    # strings when the text is printed
     def add(str)
       @lines[@line][-1] += str.to_s
     end
 
+    # Wrap the current line to +width+, with an optional +indent+. After
+    # wrapping, the current line will be the last line wrapped.
     def wrap(width: 78, indent: 0)
       text = @lines[@line].join(' ')
       text = Text.wrap(text, width: width, indent: indent)
@@ -114,21 +135,26 @@ module Ark
       text.split("\n").each {|line| self.next(line) }
     end
 
+    # Indent the current line by +count+ columns
     def indent(count)
       @lines[@line].unshift(' ' * (count - 1))
     end
 
+    # Start a new line. If +str+ is provided, push +str+ onto the new line
     def next(str=nil)
       @lines << []
       @line  += 1
       self.push(str) if str
     end
 
+    # Insert a blank line and start the line after it. If +str+ is given, push
+    # +str+ onto the new line.
     def skip(str=nil)
       self.next()
       self.next(str)
     end
 
+    # Print the constructed text
     def print()
       @lines.map {|line| line.join(' ') }.join("\n")
     end

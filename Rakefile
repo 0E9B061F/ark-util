@@ -1,4 +1,5 @@
 require 'rubygems/package_task'
+require 'rdoc/task'
 
 v = `git describe --tags`.strip.tr('-', '.')
 c = 2 - v.count('.')
@@ -53,5 +54,12 @@ end
 Gem::PackageTask.new(spec) do |pkg|
   pkg.need_zip = true
   pkg.need_tar = true
+end
+
+Rake::RDocTask.new do |rd|
+  rd.main       = 'README.md'
+  rd.rdoc_dir   = 'doc'
+  rd.title      = "ark-util #{Version} Documentation"
+  rd.rdoc_files.include("README.md", "lib/ark/utility.rb")
 end
 
