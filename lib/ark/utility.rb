@@ -57,7 +57,13 @@ module Ark
     end
   end
 
+  # Methods for manipulating text
   module Text
+    # Wrap a string to a given width, with an optional indent. Indented text
+    # will fall within the specified width.
+    # [+text+] The text to be wrapped
+    # [+width+] The number of columns to wrap within
+    # [+indent+] Indent each wrapped line of +text+ by this number of columns
     def self.wrap(text, width: 78, indent: 0)
       width -= indent
       text = text.gsub(/\s+/, " ").gsub(/(.{1,#{width}})( |\Z)/, "\\1\n")
