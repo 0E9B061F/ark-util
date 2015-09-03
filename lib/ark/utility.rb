@@ -86,7 +86,7 @@ module Ark
     def wrap(width: 78, indent: 0)
       text = @lines[@line].join(' ')
       text = Text.wrap(text, width: width, indent: indent)
-      @lines[@line] = nil
+      @lines.delete_at(@line)
       @line -= 1
       text.split("\n").each {|line| self.next(line) }
     end
