@@ -6,7 +6,7 @@ c = 2 - v.count('.')
 if c > 0
   v = v + ('.0' * c)
 else
-  v.sub!(/\.[^\.]+$/, '.pre')
+  v.sub!(/\.[^\.]+$/, '')
 end
 Version = v
 
