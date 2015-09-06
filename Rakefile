@@ -51,6 +51,11 @@ task :install => [:clobber, :gem] do
   system "gem install pkg/#{spec.name}-#{Version}.gem"
 end
 
+desc "Push a gem to rubygems.org"
+task :push => :gem do
+  system "gem push pkg/#{spec.name}-#{Version}.gem"
+end
+
 Gem::PackageTask.new(spec) do |pkg|
   pkg.need_zip = true
   pkg.need_tar = true
