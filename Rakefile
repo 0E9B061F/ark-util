@@ -8,6 +8,9 @@ if c > 0
 else
   v.sub!(/\.[^\.]+$/, '')
 end
+if !`git status --porcelain`.empty?
+  v = v + '.dev'
+end
 Version = v
 
 spec = Gem::Specification.new do |s|
