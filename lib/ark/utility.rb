@@ -137,19 +137,17 @@ module Ark
       @line  = 0
     end
 
-    # Push a string onto the current line
-    def push(str)
-      if str.is_a?(Array)
-        @lines[@line] += str.map(&:to_s)
-      else
-        @lines[@line] << str.to_s
-      end
+    # Push one or more strings onto the current line
+    def push(*str)
+      @lines[@line] += str.flatten.compact.map(&:to_s)
+      return self
     end
 
-    # Add +str+ to the last string on the line. This avoids a space between the
-    # strings when the text is printed
-    def add(str)
-      @lines[@line][-1] += str.to_s
+    # Concatenate any strings given, then append them to the last element on the
+    # line. No spaces will be added before or between the given strings.
+    def add(*str)
+      @lines[@line][-1] += str.flatten.compact.join
+      return self
     end
 
     # Wrap the current line to +width+, with an optional +indent+. After
@@ -163,11 +161,13 @@ module Ark
       @lines.delete_at(@line)
       @line -= 1
       text.split("\n").each {|line| self.next(line) }
+      return self
     end
 
     # Indent the current line by +count+ columns
     def indent(count)
       @lines[@line].unshift(' ' * (count - 1))
+      return self
     end
 
     # Start a new line. If +str+ is provided, push +str+ onto the new line
@@ -175,6 +175,7 @@ module Ark
       @lines << []
       @line  += 1
       self.push(str) if str
+      return self
     end
 
     # Insert a blank line and start the line after it. If +str+ is given, push
@@ -182,12 +183,73 @@ module Ark
     def skip(str=nil)
       self.next()
       self.next(str)
+      return self
     end
 
     # Print the constructed text
     def print()
-      @lines.map {|line| line.join(' ') }.join("\n")
+      return @lines.map {|line| line.join(' ') }.join("\n")
+    end
+
+    # Synonym for #print
+    def to_s()
+      return self.print
     end
   end
+
+  # Methods for getting version numbers and revision hashes from a git
+  # repository. Version information is extracted from tags, which are expected
+  # to be in a two number format like +1.5+. The version will have the number of
+  # revisions since the last tag appended as the minor version; if there have
+  # been 5 revisions since the last tag, then +1.5+ will become +1.5.5+. If
+  # there are uncomitted changes in the repository, and the +markdev+ argument
+  # is true, +.dev+ will be appended to the version number.
+  module Git
+
+    def self.version_line(path=nil, project: nil, default: nil, markdev: true)
+      path = Dir.pwd unless path
+      tb = TextBuilder.new()
+      v  = self.version(path, default: default, markdev: markdev)
+      r  = self.revision(path)
+      p  = project ? project : File.basename(path)
+      return tb.push(p, 'v').add(v).push(r).to_s.strip
+    end
+
+    def self.version(path=nil, default: nil, markdev: true)
+      path = Dir.pwd unless path
+      if self.is_repository?(path)
+        v = `git -C #{path} describe --tags`.strip.tr('-', '.')
+        v.sub!(/\.[^\.]+$/, '')
+        if markdev && !`git -C #{path} status --porcelain`.empty?
+          v = v + '.dev'
+        end
+      elsif default
+        v = default
+      else
+        raise GitError, "Cannot get version information; '#{path}' is not a repository and no default value was given."
+      end
+      return v
+    end
+
+    def self.revision(path)
+      path = Dir.pwd unless path
+      if self.is_repository?(path)
+        return `git -C #{path} rev-parse --short HEAD`
+      else
+        raise GitError, "Error: '#{path}' is not a git repository; cannot get revision."
+      end
+    end
+
+    def self.is_repository?(path=nil)
+      path = Dir.pwd unless path
+      return system("git -C #{path} rev-parse")
+    end
+
+    def self.is_modified?(path)
+      path = Dir.pwd unless path
+      return !`git -C #{path} status --porcelain`.empty?
+    end
+  end
+
 end
 
