@@ -90,7 +90,7 @@ module Ark
 
   # Methods for manipulating text
   module Text
-    
+
     def self.wrap_segments(segments, width: 78, indent: 0, indent_after: false)
       segments = segments.flatten.map(&:to_s)
       lines = []
