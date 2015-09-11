@@ -206,13 +206,21 @@ module Ark
   # is true, +.dev+ will be appended to the version number.
   module Git
 
+    # Raised when trying to get the revision number from a non-repository
+    class GitError < RuntimeError
+    end
+
     def self.version_line(path=nil, project: nil, default: nil, markdev: true)
       path = Dir.pwd unless path
       tb = TextBuilder.new()
       v  = self.version(path, default: default, markdev: markdev)
-      r  = self.revision(path)
+      begin
+        r  = self.revision(path)
+      rescue GitError
+        r = nil
+      end
       p  = project ? project : File.basename(path)
-      return tb.push(p, 'v').add(v).push(r).to_s.strip
+      return tb.push(p, v, r).to_s.strip
     end
 
     def self.version(path=nil, default: nil, markdev: true)
@@ -247,7 +255,7 @@ module Ark
 
     def self.is_repository?(path=nil)
       path = Dir.pwd unless path
-      return system("git -C #{path} rev-parse")
+      return system("git -C #{path} rev-parse &> /dev/null")
     end
 
     def self.is_modified?(path)
