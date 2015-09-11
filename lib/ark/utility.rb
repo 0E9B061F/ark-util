@@ -219,7 +219,12 @@ module Ark
       path = Dir.pwd unless path
       if self.is_repository?(path)
         v = `git -C #{path} describe --tags`.strip.tr('-', '.')
-        v.sub!(/\.[^\.]+$/, '')
+        c = 2 - v.count('.')
+        if c > 0
+          v = v + ('.0' * c)
+        else
+          v.sub!(/\.[^\.]+$/, '')
+        end
         if markdev && !`git -C #{path} status --porcelain`.empty?
           v = v + '.dev'
         end
