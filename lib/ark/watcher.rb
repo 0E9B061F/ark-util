@@ -8,16 +8,39 @@ class Watcher
   end
 
   class PathInfo
-    def initialize(path, type)
+    def initialize(path)
+      @path = path
       @mtime = path.mtime
-      @type = type
+      self.get_type
     end
+    attr_reader :path
     attr_reader :mtime
     attr_reader :type
+
+    def get_type
+      if @path.symlink?
+        @type = :symlink
+      elsif @path.directory?
+        @type = :directory
+      elsif @path.file?
+        @type = :file
+      else
+        @type = :other
+      end
+    end
+  end
+
+  class Event
+    def initialize(pathinfo, name)
+      @pathinfo = pathinfo
+      @name = name
+    end
+    attr_reader :pathinfo
+    attr_reader :name
   end
 
   ValidEvents = [:any, :created, :modified, :deleted]
-  ValidTypes  = [:any, :file, :directory, :symlink]
+  ValidTypes  = [:any, :file, :directory, :symlink, :other]
 
   def initialize(dir)
     @dir = Pathname.new(dir)
@@ -27,7 +50,6 @@ class Watcher
     vhooks = ValidEvents.map {|n| [n, Hash[vtypes]] }
     @hooks = Hash[vhooks]
     @pid = false
-    scan first: true
   end
 
 
@@ -36,6 +58,7 @@ class Watcher
   def daemon
     @pid = Process.fork do
       Signal.trap('INT') { exit 0 }
+      refresh
       while true
         scan
         sleep 1
@@ -43,55 +66,60 @@ class Watcher
     end
   end
 
-  def scan(first: false)
+  def scan
+    events = []
     rolling_list = []
 
+    # find events
+    
     @dir.find do |path|
       if !path.basename.to_s[/^\./].nil?
         Find.prune
       else
         if @paths[path].nil?
-          unless first
-            run_hook(:created, path)
-          end
-          @paths[path] = pinfo(path)
+          events << Event.new(PathInfo.new(path), :created)
         elsif path.mtime > @paths[path].mtime
-          run_hook(:modified, path)
-          @paths[path] = pinfo(path)
+          events << Event.new(@paths[path], :modified)
         end
         rolling_list << path
       end
     end
 
-    deleted = @paths.keys - rolling_list
-    deleted.each do |path|
-      run_hook(:deleted, path)
-      @paths.delete(path)
+    @paths.keys.each do |path|
+      unless rolling_list.member?(path)
+        events << Event.new(@paths[path], :deleted)
+      end
+    end
+
+    # run hooks on events
+
+    unless events.empty?
+      events.each {|e| run_hook(e) }
+      refresh
     end
   end
 
-  def run_hook(event, path)
-    raise InvalidHookError unless ValidEvents.member?(event)
-    type = get_type(path) || @paths[path].type || :any
-    hooks = @hooks[event][type] + @hooks[:any][type] + @hooks[event][:any]
-    hooks.uniq.each {|h| h.call(path, event, type) }
-  end
-
-  def get_type(path)
-    if path.symlink?
-      type = :symlink
-    elsif path.directory?
-      type = :directory
-    elsif path.file?
-      type = :file
-    else
-      type = false
-    end
-    return type
+  def run_hook(event)
+    e = event.name
+    t = event.pathinfo.type
+    raise InvalidHookError unless ValidEvents.member?(e)
+    hooks = @hooks[e][t] + @hooks[:any][t] + @hooks[e][:any]
+    hooks.uniq.each {|h| h.call(event.pathinfo.path, e, t) }
   end
 
   def pinfo(path)
-    return PathInfo.new(path, get_type(path))
+    return PathInfo.new(path)
+  end
+
+  def refresh
+    @paths = {}
+    @dir.find do |path|
+      if !path.basename.to_s[/^\./].nil?
+        Find.prune
+      else
+        @paths[path] = pinfo(path)
+      end
+    end
   end
 
 
