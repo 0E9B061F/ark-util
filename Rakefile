@@ -25,7 +25,7 @@ spec = Gem::Specification.new do |s|
   s.description = s.summary
 
   s.require_paths = ['lib']
-  s.files = ['lib/ark/utility.rb']
+  s.files = Dir['lib/ark/*']
 end
 
 desc "Print the version for the current revision"
