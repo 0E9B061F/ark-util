@@ -46,9 +46,13 @@ class Watcher
     @dir = Pathname.new(dir)
     raise ArgumentError unless @dir.directory?
     @paths = {}
-    vtypes = ValidTypes.map {|t| [t, []] }
-    vhooks = ValidEvents.map {|n| [n, Hash[vtypes]] }
-    @hooks = Hash[vhooks]
+    @hooks = {}
+    ValidEvents.each do |e|
+      @hooks[e] = {}
+      ValidTypes.each do |t|
+        @hooks[e][t] = []
+      end
+    end
     @pid = false
   end
 
@@ -107,28 +111,33 @@ class Watcher
     hooks.uniq.each {|h| h.call(event.pathinfo.path, e, t) }
   end
 
-  def pinfo(path)
-    return PathInfo.new(path)
-  end
-
   def refresh
     @paths = {}
     @dir.find do |path|
       if !path.basename.to_s[/^\./].nil?
         Find.prune
       else
-        @paths[path] = pinfo(path)
+        @paths[path] = PathInfo.new(path)
       end
     end
+  end
+
+  def parse_condition(c)
+    e, t = c.to_s.split.map(&:to_sym)
+    t = :any unless t
+    raise InvalidHookError unless ValidEvents.member?(e)
+    raise InvalidHookError unless ValidTypes.member?(t)
+    return e, t
   end
 
 
   public
 
-  def hook(event=:any, type=:any, &block)
-    raise InvalidHookError unless ValidEvents.member?(event)
-    raise InvalidHookError unless ValidTypes.member?(type)
-    @hooks[event][type] << block
+  def hook(*conditions, &block)
+    conditions.each do |c|
+      e, t = parse_condition(c)
+      @hooks[e][t] << block
+    end
   end
 
   def begin
