@@ -20,6 +20,6 @@ require_relative 'text'
 require_relative 'timer'
 require_relative 'watcher'
 
-module Ark
+module ARK
 end
 
