@@ -58,7 +58,7 @@ module Git
 
   def self.is_repository?(path=nil)
     path = Dir.pwd unless path
-    return system("git -C #{path} rev-parse &> /dev/null")
+    return system("git -C #{path} rev-parse 2> /dev/null")
   end
 
   def self.is_modified?(path)
